@@ -30,23 +30,68 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
+      const storagedProducts = await AsyncStorage.getItem('products');
+
+      if (storagedProducts) {
+        setProducts(JSON.parse(storagedProducts));
+      }
     }
 
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  const addToCart = useCallback(
+    async product => {
+      const productIndex = products.findIndex(
+        onCartProduct => onCartProduct.id === product.id,
+      );
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      const updatedProducts = [...products];
+      if (productIndex > -1) {
+        updatedProducts[productIndex].quantity += 1;
+        setProducts(updatedProducts);
+      } else {
+        product.quantity = 1;
+        setProducts(oldProducts => [...oldProducts, product]);
+      }
+      await AsyncStorage.setItem('products', JSON.stringify(updatedProducts));
+    },
+    [products],
+  );
 
-  const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+  const increment = useCallback(
+    async id => {
+      const productIndex = products.findIndex(product => product.id === id);
+
+      const updatedProducts = [...products];
+      if (productIndex > -1) {
+        updatedProducts[productIndex].quantity += 1;
+        setProducts(updatedProducts);
+      }
+      await AsyncStorage.setItem('products', JSON.stringify(updatedProducts));
+    },
+    [products],
+  );
+
+  const decrement = useCallback(
+    async id => {
+      const productIndex = products.findIndex(product => product.id === id);
+
+      const updatedProducts = [...products];
+      if (productIndex > -1) {
+        const currentQuantity = updatedProducts[productIndex].quantity;
+        const newQuantity = currentQuantity - 1;
+        if (newQuantity <= 0) {
+          updatedProducts.splice(productIndex, 1);
+        } else {
+          updatedProducts[productIndex].quantity -= 1;
+        }
+      }
+      setProducts(updatedProducts);
+      await AsyncStorage.setItem('products', JSON.stringify(updatedProducts));
+    },
+    [products],
+  );
 
   const value = React.useMemo(
     () => ({ addToCart, increment, decrement, products }),
